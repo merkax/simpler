@@ -1,15 +1,18 @@
 require 'yaml'
 require 'singleton'
 require 'sequel'
+require 'byebug'
+
 require_relative 'router'
 require_relative 'controller'
+
 
 module Simpler
   class Application
 
     include Singleton
 
-    attr_reader :db
+    attr_reader :db, :router
 
     def initialize
       @router = Router.new
@@ -28,9 +31,11 @@ module Simpler
 
     def call(env)
       route = @router.route_for(env)
+      return url_not_found unless route
+
       controller = route.controller.new(env)
       action = route.action
-
+     
       make_response(controller, action)
     end
 
@@ -54,5 +59,12 @@ module Simpler
       controller.make_response(action)
     end
 
+    def url_not_found
+      [
+        404,
+        {'Content-Type' => 'text/plain'},
+        ["Page not found! \n"]
+      ]
+    end
   end
 end
